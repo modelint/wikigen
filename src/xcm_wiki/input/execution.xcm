@@ -1,0 +1,297 @@
+metadata
+    Title : Execution Subsystem / Shlaer-Mellor Metamodel
+    Author : Leon Starr
+    Document ID : mint.sm-meta.td.18
+    Version : 0.7.0
+    Creation date : February 15, 2025
+    Modification date : March 28, 2025
+    Organization : Model Integration, LLC / www.modelint.com
+    Copyright notice > MIT
+    Organization logo > mint
+domain Metamodel, METAMODEL
+subsystem Execution, X 2000-2099
+class Action <import:Action>
+attributes
+    ID {I}
+    Anum {I}
+    Domain {I}
+--
+class Action Execution
+attributes
+    Action {I, R2018}
+    Anum {I, R2018}
+    Activity execution {I, R2018}
+    Domain {I, R2018}
+--
+class Active Event
+attributes
+    State machine : State Machine ID {I, R2012}
+    Domain : Domain Name {I, R2012}
+    Event : Dispatch ID {R2012}
+    Response : Event Response
+--
+class Activity Execution
+attributes
+    ID : Activity Execution ID {I}
+    Domain {I}
+--
+class Association <import:Relationship>
+attributes
+    Rnum {I}
+    Domain {I, I2, R2020}
+    Sender {I2, R2020}
+--
+class Class <import:Class Attribute>
+attributes
+    Name {I}
+    Domain {I}
+--
+class Completion Event
+attributes
+    ID : Dispatch ID {I, R2008}
+    Domain : Domain Name {I, R2008, R2011}
+    State machine : State Machine ID {I, R2008, R2011}
+--
+class Destination State
+attributes
+    State machine {I, R2014}
+    Domain {I, R2014}
+    Name {R2014}
+    State model {R2014}
+--
+class Dispatched Event
+attributes
+    ID : Dispatch ID {I}
+    State machine : State Machine ID {I}
+    Effective event : Event Name {R2010}
+    State model : State Model Name {R2010}
+    Domain : Domain Name {I, R2010}
+--
+class Effective Event <import:Event>
+attributes
+    Name {I}
+    State model {I}
+    Domain {I}
+--
+class External Entity <import:External Entity>
+attributes
+    EEnum {I}
+    Name {I2}
+    Class {I2}
+    Domain {I, I2, I3, R2020}
+    Sender {I3, R2020}
+--
+class Instance
+attributes
+    ID : Instance ID {I}
+    Class : Class Name {I, R2001}
+    Domain : Domain Name {I, R2001, R2020}
+    Sender : Sender ID {I2, R2020}
+--
+class Lifecycle State Machine
+attributes
+    ID : State Machine ID {I, R2004}
+    Instance : Instance ID {I2, R2002}
+    Class : Class Name {I2, R2002}
+    Domain : Domain Name {I, I2, R2002, R2004}
+--
+class Method <import:Activity>
+attributes
+    Name {I2}
+    Class {I2}
+    Domain {I2}
+--
+class Method Execution
+attributes
+    Activity Execution {I2, R2017}
+    Instance {I, R2016}
+    Method {I, R2016}
+    Class {I, R2016}
+    Domain {I, I2, R2016, R2017}
+--
+class Multiple Assigner <import:State>
+attributes
+    Rnum {I}
+    Domain {I}
+--
+class Multiple Assigner State Machine
+attributes
+    ID : State Machine ID {I, R2004}
+    Domain : Domain Name {I, I2, R2003, R2004}
+    Rnum : Relationship Number {I2, R2003}
+    Instance : Instance ID {I2, R2003}
+--
+class Real State <import:State>
+attributes
+    Name {I}
+    State model {I}
+    Domain {I}
+--
+class Sender
+attributes
+    ID : Sender ID {I}
+    Domain : Domain Name {I}
+--
+class Signaled Event
+attributes
+    ID : Dispatch ID {I, R2008}
+    Domain : Domain Name {I, I2, R2008, R2009, R2021}
+    State machine : State Machine ID {I, R2008, R2009}
+    Sender : Sender ID {I2, R2021}
+    Arrival time : Time {I2, OR2022}
+--
+class Single Assigner <import:State>
+attributes
+    Rnum {I}
+    Domain {I}
+--
+class Single Assigner State Machine
+attributes
+    ID : State Machine ID {I, R2004}
+    Domain : Domain Name {I, I2, R2003, R2004}
+    Rnum : Relationship Number {I2, R2003}
+--
+class State Activity <import:Activity>
+attributes
+    Anum {I}
+    Domain {I}
+--
+class State Activity Execution
+attributes
+    Activity Execution {I2, R2017}
+    State machine {I, R2015}
+    Domain {I, I2, R2015, R2017}
+    Anum {I, R2015}
+--
+class State Machine
+attributes
+    ID : State Machine ID {I}
+    Domain : Domain Name {I}
+    Current state : State Name {R2000}
+--
+class Wave <import:Action>
+attributes
+    Number {I}
+    Anum {I}
+    Domain {I}
+--
+relationships
+    R2001
+    populates, 1 Class
+    is populated with, Mc Instance
+    Instance.(Class, Domain) -> Class.(Name, Domain)
+--
+    R2002
+    drives behavior of, 1 Instance
+    has behavior driven by, 1c Lifecycle State Machine
+    Lifecycle State Machine.(Instance, Class, Domain) -> Instance.(ID, Class, Domain)
+--
+    R2003
+    assigns within parition of, 1 Instance
+    is assignment parition for, Mc Assigner State Machine
+    Lifecycle State Machine.(Instance, Class, Domain) -> Instance.(ID, Class, Domain)
+--
+    R2004
+    State Machine +
+        Lifecycle State Machine
+        Assigner State Machine
+    <subclass>.(ID, Domain) -> State Machine.(ID, Domain)
+--
+    R2005
+    is the current state of, Mc State Machine
+    is in, 1 Real State
+    State Machine.(Current state, State model, Domain) -> Real State.(Name, State model, Domain)
+--
+    R2006
+    drives behavior of, 1 Single Assigner
+    has behavior driven by, 1c Single Assigner State Machine
+    Single Assigner State Machine.(Rnum, Domain) -> Single Assigner.(Rnum, Domain)
+--
+    R2007
+    drives behavior of, 1 Multiple Assigner
+    has behavior driven by, Mc Multiple Assigner State Machine
+    Multiple Assigner State Machine.(Rnum, Domain) -> Multiple Assigner.(Rnum, Domain)
+--
+    R2008
+    Dispatched Event +
+        Completion Event
+        Signaled Event
+    <subclass>.(ID, State machine ID, Domain) -> Dispatched Event.(ID, State machine ID, Domain)
+--
+    R2009
+    is delivered to, 1 State Machine
+    has received, Mc Signaled Event
+    Signaled Event.(State machine, Domain) -> State Machine.(ID, Domain)
+--
+    R2010
+    is defined by, 1 Effective Event
+    defines, Mc Dispatched Event
+    Dispatched Event.(Effective event, State model, Domain) -> Effective Event.(Name, State model, Domain)
+--
+    R2011
+    is pending for, 1 State Machine
+    has pending, 1c Completion Event
+    Completion Event.(State machine, Domain) -> State Machine.(ID, Domain)
+--
+    R2012
+    is processing, 1c Dispatched Event
+    is being processed by, 1c State Machine
+    1 Active Event
+    Active Event.(State machine, Domain) -> State Machine.(ID, Domain)
+    Active Event.(Event, State machine, Domain) -> Dipatched Event.(ID, State machine Domain)
+--
+    R2014
+    will transition to, 1c Real State
+    is next state of, Mc State Machine
+    1 Destination State
+    Destination State.(State machine, Domain) -> State Machine.(ID, Domain)
+    Destination State.(Name, State model, Domain) -> Real State.(Name, State model, Domain)
+--
+    R2015
+    is executing, 1c State Activity
+    is being executed by, Mc State Machine
+    1 State Activity Execution
+    State Activity Execution.(State machine, Domain) -> State Machine.(ID, Domain)
+    State Activity Execution.(Activity, Domain) -> State Activity.(Activity, Domain)
+--
+    R2016
+    is executing, Mc Method
+    is being executed by, Mc Instance
+    1 Method Execution
+    Method Execution.(Instance, Class, Domain) -> Instance.(ID, Class, Domain)
+    Method Execution.(Anum, Domain) -> Method.(Anum, Domain)
+--
+    R2017
+    Activity Execution +
+        Method Execution
+        State Activity Execution
+    <subclass>.(ID, Domain) -> Activity Execution.(ID, Domain)
+--
+    R2018
+    is executing, M Action
+    is being executed in, Mc Activity Execution
+    1 Action Execution
+    Action Execution.(Activity execution, Domain) -> Activity Execution.(ID, Domain)
+    Action Execution.(Action, Anum, Domain) -> Action.(Action, Anum, Domain)
+--
+    R2019
+    is pushing, 1 Wave
+    is being pushed by, Mc Activity Execution
+    Activity Execution.(Wave, Anum, Domain) -> Wave.(Number, Anum, Domain)
+--
+    R2020
+    Sender +
+        External Entity
+        Association
+        Instance
+    <subclass>.(Sender, Domain) -> Sender.(ID, Domain)
+--
+    R2021
+    sends, Mc Signaled Event
+    is sent by, 1 Sender
+    Signaled Event.(Sender, Domain) -> Sender.(ID, Domain)
+--
+    OR2022
+    sent before / sent after, Signaled Event
+    Single sender order : I2
+--
