@@ -1,0 +1,11 @@
+
+### Identifiers
+1. <id>
+
+### Attributes
+
+No non-referential attributes.
+
+#### Name
+
+**Type:** X, based on String

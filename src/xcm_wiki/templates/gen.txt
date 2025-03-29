@@ -1,0 +1,7 @@
+### R1 / Generalization
+
+[[Type]] is a [[Atype]], [[Btype]], or [[Ctype]]
+[[Type]] is a [[Atype]] or [[Btype]]
+
+---
+

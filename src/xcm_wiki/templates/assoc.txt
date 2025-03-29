@@ -1,0 +1,8 @@
+## R1 / 1:1
+
+[[ClassA]] Tphrase _exactly one_ [[ClassB]]
+
+[[ClassB]] Pphrase _exactly one_ [[ClassA]]
+
+---
+
