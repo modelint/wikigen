@@ -29,6 +29,10 @@ def parse(cl_input):
     parser = argparse.ArgumentParser(description=_progname)
     parser.add_argument('-m', '--model', action='store',
                         help='Name xcm file')
+    parser.add_argument('-w', '--wikipath', action='store',
+                        help='Where to generate the markdown files. Directory created if it does not exist.')
+    parser.add_argument('-D', '--debug', action='store_true',
+                        help='Parser debug mode -- outputs parse diagnostics to pdf files')
     parser.add_argument('-V', '--version', action='store_true',
                         help='Print the current version of the wiki generator app')
     return parser.parse_args(cl_input)
@@ -49,7 +53,7 @@ def main():
 
     # Domain specified
     if args.model:
-        cm = ClassModelFile(args.model)
+        cm = ClassModelFile(model_fname=args.model, dir_name=args.wikipath, debug=args.debug)
 
     logger.info("No problemo")  # We didn't die on an exception, basically
     print("\nNo problemo")
