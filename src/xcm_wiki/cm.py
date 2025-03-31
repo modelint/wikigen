@@ -8,32 +8,41 @@ import logging
 from pathlib import Path
 
 # Model Integration
-from xcm_parser.exceptions import ModelInputFileOpen as XCM_ModelInputFileOpen
 from xcm_parser.class_model_parser import ClassModelParser
 
 from xcm_wiki.exceptions import *
 
 _logger = logging.getLogger(__name__)
 
+# Given two multiplicity/conditionality pairs,
+# we try to keep the c condtionality on the right
+# and the 1 on the left using the following pattern
+# purely as a matter of consistent style.
+
+# It's a bit arbitrary, yet consistent, so we express the
+# rule with a mapping rather than attempt to enforce it with
+# logic. Also makes it easier to change if we want.
 _format_rule = {
     ("1", "1"): "1:1",
     ("1", "1c"): "1:1c",
-    ("1c", "1"): "1:1c",
+    ("1c", "1"): "1:1c",  # **
     ("1c", "1c"): "1c:1c",
     ("1", "M"): "1:M",
     ("1c", "M"): "1c:M",
     ("1", "Mc"): "1:Mc",
     ("1c", "Mc"): "1c:Mc",
-    ("M", "1"): "1:M",
-    ("M", "1c"): "1c:M",
-    ("Mc", "1"): "1:Mc",
-    ("Mc", "1c"): "1c:Mc",
+    ("M", "1"): "1:M",  # **
+    ("M", "1c"): "1c:M",  # **
+    ("Mc", "1"): "1:Mc",  # **
+    ("Mc", "1c"): "1c:Mc",  # **
     ("M", "M"): "M:M",
     ("M", "Mc"): "M:Mc",
-    ("Mc", "M"): "Mc:M",
+    ("Mc", "M"): "M:Mc",  # **
     ("Mc", "Mc"): "Mc:Mc"
 }
 
+# We like to spell out the multiplicity/conditionality
+# in the relationship headers for easier reading.
 _mult_name = {
     "1" : "exactly one",
     "1c" : "zero or one",
@@ -49,132 +58,36 @@ class ClassModelFile:
 
     def __init__(self, model_fname: str, dir_name: str, debug=False):
         """
-        Parse the model file and generate a class markdown (*.md) wiki template file and
-        one for each relationship as well.
+        Parse the model file and generate a markdown (*.md) wiki template file for each class
+        and relationship.
 
-        Name each class file with the pattern: <class_name>.md using underscores in place of spaces, all lower case for
-        the class name.
+        For class descriptions, use the file name pattern: <class_name>.md with hyphens in place of spaces
+        in the class name. Ex: Shaft-Level.md
 
-        Name each relationshiop file with the pattern: R<num>.md where the nume is the relationship name
+        For relationship descriptions, use file name pattern: <rnum>.md  Ex: R21.md
 
         :param model_fname: Name of the class model *.xcm file
-        :param dir_name: Name of the directory Where to put the generated markdown files
+        :param dir_name: The markdown files will be created/updated in this directory
         """
 
-        # Resolve directories
+        # Resolve directories to absolute paths
         self.wiki_path = Path(dir_name).resolve()
         self.wiki_path.mkdir(exist_ok=True)  # Create the wiki dir if it does not exist
-        self.xuml_model_path = Path(model_fname).resolve()
+        self.xcm_model_path = Path(model_fname).resolve()
 
-        # Parse both the model *.xcm file
+        # Parse the model .xcm file
 
         # Model
-        _logger.info("Parsing the class model")
+        _logger.info(f"Parsing the class model: {self.xcm_model_path}")
         try:
-            self.model = ClassModelParser.parse_file(file_input=self.xuml_model_path, debug=debug)
+            self.model = ClassModelParser.parse_file(file_input=self.xcm_model_path, debug=debug)
         except WGFileException as e:
-            _logger.error(f"Cannot open class model file: {self.xuml_model_path}")
+            _logger.error(f"Cannot open class model file: {self.xcm_model_path}")
             sys.exit(str(e))
-
         _logger.info("Parsing complete")
+
         self.format_classes()
         self.format_relationships()
-
-    def gen_md_file(self, name: str, content: list[str]):
-        """
-        Writes content out to a markdown file
-
-        :param name: The basename of the file, the .md suffix will be appended
-        :param content: A list of newline terminates strings to be written out to the file
-        """
-
-        # Replace any spaces with the hyphen character, no change to case
-        file_path = self.wiki_path / f"{name.replace(' ', '-')}.md"
-
-        with file_path.open("w", encoding="utf-8") as f:
-            f.writelines("\n".join(content))
-
-    def format_relationships(self):
-        for r in self.model.rels:
-            if r.get('t_side'):
-                # Association
-                rtext = ClassModelFile.format_assoc(r)
-            elif r.get('ascend'):
-                # Ordinal
-                rtext = ClassModelFile.format_ordinal(r)
-            else:
-                # Generalization
-                rtext = ClassModelFile.format_gen(r)
-
-            # Header boundary
-            rtext.append("")
-            rtext.append("---")
-
-            # Description section
-            rtext.append("")
-            rtext.append("<description>")
-
-            # Generate the wiki md file
-            self.gen_md_file(name=r['rnum'], content=rtext)
-
-
-    @staticmethod
-    def format_ordinal(r) -> list[str]:
-        """
-        :param r:
-        :return:
-        """
-        return [
-            f"## {r['rnum']} / Ordinal",
-            "",
-            f"[[{r['ascend']['cname']}]] {r['ascend']['highval']}, "
-            f"{r['ascend']['lowval']}"
-        ]
-
-    @staticmethod
-    def format_gen(r) -> list[str]:
-        """
-
-        :param r:
-        :return:
-        """
-        subs = r['subclasses']
-        sub1 = subs[0]
-        n = "n" if sub1[0].lower() in 'aeiou' else ""
-        h_isa = f"[[{r['superclass']}]] is a{n} "
-        br_subs = [f"[[{s}]]" for s in subs]
-
-        if len(subs) == 2:
-            h_cnames = f"{br_subs[0]} or {br_subs[1]}"
-        else:
-            h_cnames = f"{', '.join(br_subs[:-1])}, or {br_subs[-1]}"
-
-        return [
-            f"### {r['rnum']} / Generalization",
-            "",
-            h_isa + h_cnames,
-        ]
-
-    @staticmethod
-    def format_assoc(r) -> list[str]:
-        """
-        :param r:
-        :return:
-        """
-        # Relationship header
-        text: list[str] = []
-        amult = r.get('assoc_mult', '')
-        amult = f"-{amult}" if amult else ""
-        mult = f"{_format_rule[(r['t_side']['mult'], r['p_side']['mult'])]}{amult}"
-        text.append(f"## {r['rnum']} / {mult}")
-        text.append("")
-
-        # Phrases
-        text.append(f"[[{r['t_side']['cname']}]] {r['t_side']['phrase']} _{_mult_name[r['t_side']['mult']]}_ [[{r['p_side']['cname']}]]")
-        text.append("")
-        text.append(f"[[{r['p_side']['cname']}]] {r['p_side']['phrase']} _{_mult_name[r['p_side']['mult']]}_ [[{r['t_side']['cname']}]]")
-
-        return text
 
     def format_classes(self):
         """
@@ -243,33 +156,8 @@ class ClassModelFile:
             attr_text = ClassModelFile.build_attr_section(cname=c['name'], attributes=c['attributes'])
             lines.extend(attr_text)
 
-            # Generate the wiki md file
+            # Generate the wiki class md file
             self.gen_md_file(name=c['name'], content=lines)
-
-    @staticmethod
-    def build_attr_section(cname: str, attributes) -> list[str]:
-        """
-        We either state that there are no non-referential attributes or
-        we add a name/type entry per non-referential attribute
-
-        :param cname: Name of the class, for the warning message
-        :param attributes: Attribute parse for a single class
-        :return:
-        """
-        non_ref_attrs = [a for a in attributes if not a.get('R')]
-        if not non_ref_attrs:
-            return ["\nNo non-referential attributes."]
-        else:
-            text = []
-            for nr in non_ref_attrs:
-                try:
-                    text.append(f"\n#### {nr['name']}\n\n**Type:** {nr['type']}, based on String")
-                except KeyError as e:
-                    if nr.get('name'):
-                        _logger.warning(f"Model file does not specified a type for attribute: {cname}.{nr['name']}")
-                        text.append(f"\n#### {nr['name']}\n\n**Type:** <tbd>, based on String")
-            return text
-
 
     @staticmethod
     def build_id_list(attributes) -> list[str]:
@@ -307,7 +195,130 @@ class ClassModelFile:
         id_lines = [f"{i}. {" + ".join(identifiers[i])}" for i in sorted(identifiers)]
         return id_lines
 
+    @staticmethod
+    def build_attr_section(cname: str, attributes) -> list[str]:
+        """
+        We either state that there are no non-referential attributes or
+        we add a name/type entry per non-referential attribute
 
-if __name__ == "__main__":
-    x = ClassModelFile()
+        :param cname: Name of the class, for the warning message
+        :param attributes: Attribute parse for a single class
+        :return: All lines of text in the attribute definitions (under the attribute section header)
+        """
+        non_ref_attrs = [a for a in attributes if not a.get('R')]
+        if not non_ref_attrs:
+            return ["\nNo non-referential attributes."]
+        else:
+            text = []
+            for nr in non_ref_attrs:
+                try:
+                    text.append(f"\n#### {nr['name']}\n\n**Type:** {nr['type']}, based on String")
+                except KeyError as e:
+                    if nr.get('name'):
+                        _logger.warning(f"No type specified for attribute: {cname}.{nr['name']} -- inserting <tbd>")
+                        text.append(f"\n#### {nr['name']}\n\n**Type:** <tbd>, based on String")
+            return text
 
+    def format_relationships(self):
+        """
+        We generate a different wiki template for each relationship type: association, ordinal, generalization
+        """
+        for r in self.model.rels:
+            if r.get('t_side'):
+                # Association
+                rtext = ClassModelFile.format_assoc(r)
+            elif r.get('ascend'):
+                # Ordinal
+                rtext = ClassModelFile.format_ordinal(r)
+            else:
+                # Generalization
+                rtext = ClassModelFile.format_gen(r)
+
+            # Header boundary
+            rtext.append("")
+            rtext.append("---")
+
+            # Description section
+            rtext.append("")
+            rtext.append("<description>")
+
+            # Generate the wiki relationship md file
+            self.gen_md_file(name=r['rnum'], content=rtext)
+
+    @staticmethod
+    def format_ordinal(r) -> list[str]:
+        """
+        Generate the text for an ordinal relationship description
+
+        :param r: The relationship parse
+        :return: All text lines in the ordinal description
+        """
+        return [
+            f"## {r['rnum']} / Ordinal",
+            "",
+            f"[[{r['ascend']['cname']}]] {r['ascend']['highval']}, "
+            f"{r['ascend']['lowval']}"
+        ]
+
+    @staticmethod
+    def format_gen(r) -> list[str]:
+        """
+        Generate the text for a generalization description
+
+        :param r: The relationship parse
+        :return: All text lines in the generalization description
+        """
+        subs = r['subclasses']  # The list of subclass names
+        sub1 = subs[0]  # We use "is a" or "is an" based on the first character in the first subclass name
+        n = "n" if sub1[0].lower() in 'aeiou' else ""
+        # We wrap each name in [[ ]] braces so each class name is a link to its class description page
+        h_isa = f"[[{r['superclass']}]] is a{n} "
+        br_subs = [f"[[{s}]]" for s in subs]
+
+        if len(subs) == 2:
+            # With only two classes we say: SubclassA or SubclassB
+            h_subnames = f"{br_subs[0]} or {br_subs[1]}"
+        else:
+            # Otherwise we say: SubclassA, SubclassB, ... or Subclass<x>
+            h_subnames = f"{', '.join(br_subs[:-1])}, or {br_subs[-1]}"
+
+        return [
+            f"### {r['rnum']} / Generalization",
+            "",
+            h_isa + h_subnames,
+            ]
+
+    @staticmethod
+    def format_assoc(r) -> list[str]:
+        """
+        :param r: The relationship parse
+        :return: All text lines in the association description
+        """
+        # Relationship header
+        text: list[str] = []
+        amult = r.get('assoc_mult', '')  # This only applies if there is an association class
+        amult = f"-{amult}" if amult else ""
+        mult = f"{_format_rule[(r['t_side']['mult'], r['p_side']['mult'])]}{amult}"  # Put multipicity in standard form
+        text.append(f"## {r['rnum']} / {mult}")
+        text.append("")
+
+        # Relationship phrases
+        text.append(f"[[{r['t_side']['cname']}]] {r['t_side']['phrase']} _{_mult_name[r['t_side']['mult']]}_ [[{r['p_side']['cname']}]]")
+        text.append("")
+        text.append(f"[[{r['p_side']['cname']}]] {r['p_side']['phrase']} _{_mult_name[r['p_side']['mult']]}_ [[{r['t_side']['cname']}]]")
+
+        return text
+
+    def gen_md_file(self, name: str, content: list[str]):
+        """
+        Writes content out to a markdown file
+
+        :param name: The basename of the file, the .md suffix will be appended
+        :param content: A list of newline terminates strings to be written out to the file
+        """
+
+        # Replace any spaces with the hyphen character, no change to case
+        file_path = self.wiki_path / f"{name.replace(' ', '-')}.md"
+
+        with file_path.open("w", encoding="utf-8") as f:
+            f.writelines("\n".join(content))

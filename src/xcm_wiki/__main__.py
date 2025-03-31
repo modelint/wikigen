@@ -56,7 +56,7 @@ def main():
         cm = ClassModelFile(model_fname=args.model, dir_name=args.wikipath, debug=args.debug)
 
     logger.info("No problemo")  # We didn't die on an exception, basically
-    print("\nNo problemo")
+    # print("\nNo problemo")
 
 
 if __name__ == "__main__":
