@@ -1,1 +1,1 @@
-include src/flatland/log.conf
+include src/xcm_wiki/log.conf
