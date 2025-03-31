@@ -23,3 +23,48 @@ Type:
 `% wikigen -help`
 
 To get the most up to date list of options
+
+### Installation
+
+I recommend creating a virtual environment with python 3.13
+
+(download python 3.13 and ensure that this is the current version)
+
+% python3 venv wiki_env
+
+Activate the environment
+
+`% source wiki_env/bin/activate`
+
+Then with that environment activated (as indicated by the parenthesis before the shell prompt below):
+
+`(wikigen) % pip install xcm-wiki-gen`
+
+Now you've got the package installed in your environment.
+At this point you can deactivate your environment if you like:
+
+`(wikigen) % deactivate`
+
+`% `
+
+Later you can always reactivate the environment and upgrade to the latest version with:
+
+`% source wiki_env/bin/activate`
+
+`(wikigen) % pip install xcm-wiki-gen -U`
+
+The binary command is in wiki_env/bin directory. To elminate the need to go back and keep activating the environment, just create a symbolic link to the command whereever you keep your local bin files. I do this:
+
+`% cd ~/bin`
+
+`% ln -s wiki_env/bin/wikigen .`
+
+Now open a new terminal window (or refresh your shell environment) and the command should be available. A quick test is just to check the version.
+
+`% wikigen -V`
+
+`Blueprint Class Model Wiki Generator version: 0.1.2`
+
+`%`
+
+
