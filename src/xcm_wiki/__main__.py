@@ -8,6 +8,7 @@ import logging.config
 import sys
 import argparse
 from pathlib import Path
+import atexit
 
 # MX
 from xcm_wiki.cm import ClassModelFile
@@ -15,6 +16,10 @@ from xcm_wiki import version
 
 _logpath = Path("xcm_wiki.log")
 _progname = 'Blueprint Class Model Wiki Generator'
+
+def clean_up():
+    """Normal and exception exit activities"""
+    _logpath.unlink(missing_ok=True)
 
 
 def get_logger():
@@ -33,6 +38,8 @@ def parse(cl_input):
                         help='Where to generate the markdown files. Directory created if it does not exist.')
     parser.add_argument('-D', '--debug', action='store_true',
                         help='Parser debug mode -- outputs parse diagnostics to pdf files')
+    parser.add_argument('-L', '--log', action='store_true',
+                        help='Generate a diagnostic log file')
     parser.add_argument('-V', '--version', action='store_true',
                         help='Print the current version of the wiki generator app')
     return parser.parse_args(cl_input)
@@ -45,6 +52,10 @@ def main():
 
     # Parse the command line args
     args = parse(sys.argv[1:])
+
+    if not args.log:
+        # If no log file is requested, remove the log file before termination
+        atexit.register(clean_up)
 
     if args.version:
         # Just print the version and quit
