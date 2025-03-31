@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xcm-wiki-gen"
-version = "0.1.0"
+version = "0.1.1"
 description = "Generates a set of GitHub Wiki class and relationship description template markdown files from an input xcm (executable class model) file."
 readme = "README.md"
 authors = [{ name = "Leon Starr", email = "leon_starr@modelint.com" }]
