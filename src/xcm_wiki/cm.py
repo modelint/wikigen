@@ -140,6 +140,7 @@ class ClassModelFile:
             if c.get('import'):
                 continue  # Skip all imported classes
 
+            _logger.info(f"Formatting class: {c['name']}")
             # Class description: User will paste in this part
             lines.append("<description>")  # User will fill this in
             lines.append("")  # Blank line (OS independent newlines added when file is written out)
@@ -224,6 +225,7 @@ class ClassModelFile:
         We generate a different wiki template for each relationship type: association, ordinal, generalization
         """
         for r in self.model.rels:
+            _logger.info(f"Formatting relationship: {r['rnum']}")
             if r.get('t_side'):
                 # Association
                 rtext = ClassModelFile.format_assoc(r)
@@ -322,3 +324,5 @@ class ClassModelFile:
 
         with file_path.open("w", encoding="utf-8") as f:
             f.writelines("\n".join(content))
+
+        _logger.info(f"Created: {file_path}")
